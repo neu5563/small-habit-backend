@@ -1,6 +1,6 @@
 const { Router } = require('express');
 var router = Router();
-let supabase = require('../supabase')
+const supabase = require('../supabase.js');
 
 /* GET home page. */
 router.get('/',  function(req, res, next) {
@@ -8,24 +8,13 @@ router.get('/',  function(req, res, next) {
 });
 
 // 조회
-router.get('/user', async function(req, res, next) {
-  const { data, error } = await supabase
-    .from('User')
-    .select('*')
-  
+router.get('/user',  async function(req, res, next) {
+  let { data, error} = await supabase.from('user').select()
+
+  console.log(error);
   res.send(data);
 });
 
 // 추가
-// router.post('./user/create/:id', async function(req, res, next) {
-//   const { data, error } = await supabase
-//   .from('small-habit')
-//   .insert([
-//     { id: '5ff96222-0fed-4c09-aefd-6e59a352dbd2', 
-//       nickname: '밧사도르',
-//       email: 'qkttkehfm@gamil.com', 
-//     }
-//   ])
-// });
 
 module.exports = router;
