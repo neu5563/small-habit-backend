@@ -1,10 +1,11 @@
-import createError from 'http-errors';
-import express from 'express';
-import path from 'path';
-import cookieParser from 'cookie-parser';
-import apiRouter from './api/api.mjs';
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const apiRouter = require('./api/index.js');
 var app = express();
-const __dirname = path.resolve();
+
+// const __dirname = path.resolve();
 const join = path.join
 
 // view engine setup
@@ -35,4 +36,4 @@ app.use(function(err, req, res, next) {
 });
 
 
-export default app;
+module.exports = app

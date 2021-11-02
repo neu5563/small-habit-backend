@@ -1,6 +1,6 @@
-import { Router } from 'express';
+const { Router } = require('express');
 var router = Router();
-import supabase  from '../supabase.mjs';
+let supabase = require('../supabase')
 
 /* GET home page. */
 router.get('/',  function(req, res, next) {
@@ -10,12 +10,11 @@ router.get('/',  function(req, res, next) {
 // 조회
 router.get('/user', async function(req, res, next) {
   const { data, error } = await supabase
-  .from('User')
-  .select('*')
+    .from('User')
+    .select('*')
+  
   res.send(data);
 });
-
-
 
 // 추가
 // router.post('./user/create/:id', async function(req, res, next) {
@@ -29,4 +28,4 @@ router.get('/user', async function(req, res, next) {
 //   ])
 // });
 
-export default router;
+module.exports = router;
