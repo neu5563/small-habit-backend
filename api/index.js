@@ -13,6 +13,8 @@ router.get('/',  function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+
+// 카카오 로그인
 router.get('/login/kakao', async function(req, res, next) {
 
   let kakaoUserAuth = {
@@ -21,24 +23,26 @@ router.get('/login/kakao', async function(req, res, next) {
     email: ''
   }; //카카오 유저 정보
 
-  let { data: userAuth, error } = await supabase
-  .from('user')
-  .select('*')
-  .eq('id', kakaoUserAuth.id)
-
   // 신규유저 정보 저장
-  async function newUser(id, nickname, email) {
-    await supabase
+  try {
+    let { data: userAuth, error } = await supabase
     .from('user')
-    .insert([
-      { id, 
-        nickname, 
-        email 
-      }
-    ])
-  }
-  if(!userAuth) {
-    newUser(kakaoUserAuth.id, kakaoUserAuth.nickname, kakaoUserAuth.email)
+    .select('*')
+    .eq('id', kakaoUserAuth.id)
+
+    if(!userAuth) {
+      await supabase
+      .from('user')
+      .insert([
+        { 
+          id: kakaoUserAuth.id, 
+          nickname: kakaoUserAuth.nickname, 
+          email: kakaoUserAuth.email 
+        }
+      ])
+    }
+  } catch(err) {
+    console.log('err', err)
   }
 
   res.redirect('/objective/today')
@@ -46,10 +50,12 @@ router.get('/login/kakao', async function(req, res, next) {
 
 // 오늘의 목표 가져오기
 router.get('/objective/today',  async function(req, res, next) { 
+  const userId = 9245245;
+
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
   .select('*')
-  .eq('userId', 9245245)
+  .eq('userId', userId)
   .eq('activated', true)
   
   let todaysObjective = mainObjective.filter(el => {
@@ -74,29 +80,85 @@ router.get('/objective/today',  async function(req, res, next) {
 
 // 전체목표 가져오기
 router.get('/objective/all', async function(req, res, next) {
+  const userId = 9245245;
 
-  let { data: mainObjective, error } = await supabase
+  let { data: allObjective, error } = await supabase
   .from('mainObjective')
   .select('*')
-  .eq('userId', 9245245)
+  .eq('userId', userId)
   .eq('activated', true)
 
-  console.log(mainObjective)
+  console.log(allObjective)
   res.send('전체 목표')
 })
 
 // 종료된목표 가져오기
 router.get('/objective/end', async function(req, res, next) {
+  const userId = 9245245;
 
-  let { data: mainObjective, error } = await supabase
+  let { data:endedObjective, error } = await supabase
   .from('mainObjective')
   .select('*')
-  .eq('userId', 9245245)
+  .eq('userId', userId)
   .eq('activated', false)
 
-  console.log(mainObjective)
+  console.log(endedObjective)
   res.send('종료 목표')
 })
 
+// 신규목표 생성
+router.get('/objective/create', async function(req, res, next) {
+  const userId = 2134234234;
+  
+  await supabase
+  .from('mainObjective')
+  .insert([
+    { userId: userId,
+      field: '운동',
+      objective: '헬스 가기',
+      schedule: {"week" : [1, 3, 5]},
+      activated: true
+    },
+  ])
+
+  console.log(mainObjective)
+  res.send('신규 생성')
+})
+
+// 목표 수정
+router.get('/objective/update', async function(req, res, next) {
+  const userId = 9245245;
+  const objectiveId = ''
+  const edit = ''
+
+  let { data: updatedObjective, error } = await supabase
+  .from('mainObjective')
+  .update({
+    edit
+  })
+  .eq('userId', userId)
+  .eq('objectiveId', objectiveId)
+  .eq('activated', true)
+
+  console.log(updatedObjective)
+  res.send('목표 수정')
+})
+
+// 목표 삭제
+router.get('/objective/delete', async function(req, res, next) {
+  const userId = 9245245;
+  const objectiveId = ''
+  const edit = ''
+
+  let { data: deletedObjective, error } = await supabase
+  .from('mainObjective')
+  .delete()
+  .eq('userId', userId)
+  .eq('objectiveId', objectiveId)
+  .eq('activated', true)
+
+  console.log(deletedObjective)
+  res.send('목표 수정')
+})
 
 module.exports = router;
