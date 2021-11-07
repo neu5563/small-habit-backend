@@ -1,8 +1,8 @@
-const axios = require('axios');
-const { Router } = require('express');
+const { Router, response } = require('express');
 var router = Router();
 const supabase = require('../supabase.js');
 const dotenv = require('dotenv');
+const { default: axios } = require('axios');
 dotenv.config()
 
 const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
@@ -16,41 +16,81 @@ router.get('/',  function(req, res, next) {
 
 // 카카오 로그인
 router.get('/login/kakao', async function(req, res, next) {
-
-  let kakaoUserAuth = {
-    id: 23423452,
-    nickname: 'joogle',
-    email: ''
-  }; //카카오 유저 정보
-
-  // 신규유저 정보 저장
+  const AUTHORIZE_CODE = req.query.code;
+  console.log(AUTHORIZE_CODE)
+  // 토큰 받아오기
+  let response;
   try {
-    let { data: userAuth, error } = await supabase
-    .from('user')
-    .select('*')
-    .eq('id', kakaoUserAuth.id)
+    response = await axios({
+      method: 'get',
+      url: `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&code=${AUTHORIZE_CODE}`,
+    })
+  }catch(err) {
+    console.log(err)
+  }
+  let access_token = response.data.access_token;
 
-    if(!userAuth) {
+  // 카카오에서 유저정보 받아오기
+  try {
+    response = await axios({
+      method: 'get',
+      headers: {
+        "Authorization": `Bearer ${access_token}`
+      },
+      url: 'https://kapi.kakao.com/v2/user/me'
+    })
+  }catch(err) {
+    console.log(err)
+  }
+
+  // 받아온 유저정보 저장
+  const kakaoUserAuth = {
+    kakaoAuthId: response.data.id,
+    nickname: response.data.properties.nickname,
+    email: response.data.kakao_account.email
+  }
+  console.log('kakaoUser', kakaoUserAuth)
+  // 데이터 베이스에 유저가 있는지 탐색
+  const getUser = async function() {
+    try {
+      const user = await supabase
+      .from('user')
+      .select('*')
+      .eq('kakaoAuthId', kakaoUserAuth.kakaoAuthId)
+      return user
+    }catch(err) {
+      console.log('err', err)
+    }
+  }
+  let userOfDatabase = await getUser(kakaoUserAuth);
+
+  // 신규가입
+  const newUser = async function() {
+    try {
       await supabase
       .from('user')
       .insert([
         { 
-          id: kakaoUserAuth.id, 
-          nickname: kakaoUserAuth.nickname, 
-          email: kakaoUserAuth.email 
-        }
+          kakaoAuthId: kakaoUserAuth.kakaoAuthId, 
+          nickname: kakaoUserAuth.nickname,
+          email: kakaoUserAuth.email
+        },
       ])
+    }catch(err) {
+      console.log('err', err)
     }
-  } catch(err) {
-    console.log('err', err)
   }
-
-  res.redirect('/objective/today')
+  if(userOfDatabase.data.kakaoAuthId != kakaoUserAuth.kakaoAuthId) {
+    await newUser()
+    userOfDatabase = await getUser(kakaoUserAuth);
+  }
+  console.log('userOf', userOfDatabase)
+  res.send(userOfDatabase);
 })
 
 // 오늘의 목표 가져오기
 router.get('/objective/today',  async function(req, res, next) { 
-  const userId = 9245245;
+  const userId = '';
 
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
@@ -107,58 +147,78 @@ router.get('/objective/end', async function(req, res, next) {
 })
 
 // 신규목표 생성
-router.get('/objective/create', async function(req, res, next) {
-  const userId = 2134234234;
-  
-  await supabase
-  .from('mainObjective')
-  .insert([
-    { userId: userId,
-      field: '운동',
-      objective: '헬스 가기',
-      schedule: {"week" : [1, 3, 5]},
-      activated: true
-    },
-  ])
-
-  console.log(mainObjective)
-  res.send('신규 생성')
+router.post('/objective/create', async function(req, res, next) {
+  const newObjective = {
+    userid: req.body.userId,
+    field: req.body.field,
+    objective: req.body.objective,
+    schedule: req.body.schedule,
+    activated: req.body.activated
+  };
+  try {
+    console.log(newObjective)
+    await supabase
+    .from('mainObjective')
+    .insert([
+      { userId: newObjective.userid,
+        field: newObjective.field,
+        objective: newObjective.objective,
+        schedule: newObjective.schedule,
+        activated: newObjective.activated
+      },
+    ])
+  }catch(err) {
+    console.log('err', err)
+  }
 })
 
 // 목표 수정
-router.get('/objective/update', async function(req, res, next) {
-  const userId = 9245245;
-  const objectiveId = ''
-  const edit = ''
-
-  let { data: updatedObjective, error } = await supabase
-  .from('mainObjective')
-  .update({
-    edit
-  })
-  .eq('userId', userId)
-  .eq('objectiveId', objectiveId)
-  .eq('activated', true)
-
-  console.log(updatedObjective)
-  res.send('목표 수정')
+router.put('/objective/update', async function(req, res, next) {
+  const updatedObjective = {
+    userId: req.body.userId,
+    id: req.body.id,
+    field: req.body.field,
+    objective: req.body.objective,
+    schedule: req.body.schedule,
+    activated: req.body.activated,
+    edit: req.body.edit
+  };
+  try {
+    console.log(updatedObjective)
+    await supabase
+    .from('mainObjective')
+    .update(
+      updatedObjective.edit
+    )
+    .eq('userId', updatedObjective.userId)
+    .eq('id', updatedObjective.id)
+    .eq('activated', true)
+  }catch(err) {
+    console.log('err', err)
+  }
 })
 
 // 목표 삭제
-router.get('/objective/delete', async function(req, res, next) {
-  const userId = 9245245;
-  const objectiveId = ''
-  const edit = ''
-
-  let { data: deletedObjective, error } = await supabase
-  .from('mainObjective')
-  .delete()
-  .eq('userId', userId)
-  .eq('objectiveId', objectiveId)
-  .eq('activated', true)
-
-  console.log(deletedObjective)
-  res.send('목표 수정')
+router.delete('/objective/delete', async function(req, res, next) {
+  const deletedObjective = {
+    userId: req.body.userId,
+    id: req.body.id,
+    field: req.body.field,
+    objective: req.body.objective,
+    schedule: req.body.schedule,
+    activated: req.body.activated
+  };
+  try {
+    console.log(deletedObjective)
+    await supabase
+    .from('mainObjective')
+    .delete()
+    .eq('userId', deletedObjective.userId)
+    .eq('id', deletedObjective.id)
+    .eq('activated', deletedObjective.activated)
+  }catch(err) {
+    console.log('err', err)
+  }
 })
 
 module.exports = router;
