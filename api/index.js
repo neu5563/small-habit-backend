@@ -88,9 +88,12 @@ router.get('/login/kakao', async function(req, res, next) {
   res.send(userOfDatabase);
 })
 
+////////////////
+// 목표 가져오기
+
 // 오늘의 목표 가져오기
 router.get('/objective/today',  async function(req, res, next) { 
-  const userId = '';
+  const userId = req.body.userId;
 
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
@@ -120,7 +123,7 @@ router.get('/objective/today',  async function(req, res, next) {
 
 // 전체목표 가져오기
 router.get('/objective/all', async function(req, res, next) {
-  const userId = 9245245;
+  const userId = req.body.userId;
 
   let { data: allObjective, error } = await supabase
   .from('mainObjective')
@@ -134,7 +137,7 @@ router.get('/objective/all', async function(req, res, next) {
 
 // 종료된목표 가져오기
 router.get('/objective/end', async function(req, res, next) {
-  const userId = 9245245;
+  const userId = req.body.userId;
 
   let { data:endedObjective, error } = await supabase
   .from('mainObjective')
@@ -145,6 +148,8 @@ router.get('/objective/end', async function(req, res, next) {
   console.log(endedObjective)
   res.send('종료 목표')
 })
+
+////////////
 
 // 신규목표 생성
 router.post('/objective/create', async function(req, res, next) {
@@ -172,6 +177,8 @@ router.post('/objective/create', async function(req, res, next) {
   }
 })
 
+/////////////////
+
 // 목표 수정
 router.put('/objective/update', async function(req, res, next) {
   const updatedObjective = {
@@ -197,6 +204,8 @@ router.put('/objective/update', async function(req, res, next) {
     console.log('err', err)
   }
 })
+
+///////////////
 
 // 목표 삭제
 router.delete('/objective/delete', async function(req, res, next) {
