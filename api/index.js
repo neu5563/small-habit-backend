@@ -123,7 +123,7 @@ router.get('/objective/today',  async function(req, res, next) {
 
 // 전체목표 가져오기
 router.get('/objective/all', async function(req, res, next) {
-  const userId = req.body.userId;
+  const userId = req.query.userId;
 
   let { data: allObjective, error } = await supabase
   .from('mainObjective')
@@ -132,12 +132,12 @@ router.get('/objective/all', async function(req, res, next) {
   .eq('activated', true)
 
   console.log(allObjective)
-  res.send('전체 목표')
+  res.send(allObjective)
 })
 
 // 종료된목표 가져오기
 router.get('/objective/end', async function(req, res, next) {
-  const userId = req.body.userId;
+  const userId = req.query.userId;
 
   let { data:endedObjective, error } = await supabase
   .from('mainObjective')
@@ -146,7 +146,7 @@ router.get('/objective/end', async function(req, res, next) {
   .eq('activated', false)
 
   console.log(endedObjective)
-  res.send('종료 목표')
+  res.send(endedObjective)
 })
 
 ////////////
