@@ -82,10 +82,10 @@ router.get('/login/kakao', async function(req, res, next) {
   }
   if(userOfDatabase.data.kakaoAuthId != kakaoUserAuth.kakaoAuthId) {
     await newUser()
-    userOfDatabase = await getUser(kakaoUserAuth);
+    userOfDatabase = await getUser();
   }
-  console.log('userOf', userOfDatabase)
-  res.send(userOfDatabase);
+  console.log('userOf', userOfDatabase.data[0])
+  res.send(userOfDatabase.data[0]);
 })
 
 ////////////////
@@ -93,7 +93,7 @@ router.get('/login/kakao', async function(req, res, next) {
 
 // 오늘의 목표 가져오기
 router.get('/objective/today',  async function(req, res, next) { 
-  const userId = req.body.userId;
+  const userId = req.query.userId;
 
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
