@@ -4,7 +4,15 @@ const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const apiRouter = require('./api/index.js');
+const session = require('express-session');
+var MySQLStore = require('express-mysql-session')(session);;
 var app = express();
+var options ={                                                 
+  host: 'localhost',
+  port: 3000,
+  userId: '',
+};
+var sessionStore = new MySQLStore(options);
 
 // const __dirname = path.resolve();
 const join = path.join
@@ -13,6 +21,16 @@ const join = path.join
 app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+app.use(session({                                              
+  secret:"asdfasffdas",
+  resave:false,
+  saveUninitialized:true,
+  store: sessionStore,
+  cookie: {
+    httpOnly: true,
+    secure: false 
+  }                                         
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

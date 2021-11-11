@@ -103,6 +103,27 @@ const deleteObjective = function (req) {
   }
 }
 // deleteObjective(deletedObjective);
+const user = {
+  userId: 10,
+  schedule: 6
+}
 
+const objectives = async function(req) {
+  try {
+    const response = await axios({
+      method: 'get',
+      url: 'http://localhost:3000/objectives',
+      params: {
+        userId: req.userId,
+        schedule: req.schedule
+      }
+    }); 
+    console.log('res', response)   
+  }
+  catch (err) {
+    console.log(err);
+  }
+}
+objectives(user)
 
 

@@ -18,6 +18,7 @@ router.get('/',  function(req, res, next) {
 router.get('/login/kakao', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
   console.log(AUTHORIZE_CODE)
+  console.log('session', req.session)
   // 토큰 받아오기
   let response;
   try {
@@ -50,6 +51,7 @@ router.get('/login/kakao', async function(req, res, next) {
     email: response.data.kakao_account.email
   }
   console.log('kakaoUser', kakaoUserAuth)
+
   // 데이터 베이스에 유저가 있는지 탐색
   const getUser = async function() {
     try {
@@ -84,70 +86,59 @@ router.get('/login/kakao', async function(req, res, next) {
     await newUser()
     userOfDatabase = await getUser();
   }
-  console.log('userOf', userOfDatabase.data[0])
-  res.send(userOfDatabase.data[0]);
+  if (req.session.userId === undefined) {
+    req.session.userId = userOfDatabase.data.id;
+  }
+  console.log('sessionUserId', req.session.userId)
+
 })
 
 ////////////////
 // 목표 가져오기
+router.get('/objectives',  async function(req, res, next) { 
 
-// 오늘의 목표 가져오기
-router.get('/objective/today',  async function(req, res, next) { 
   const userId = req.query.userId;
-
+  const schedule = req.query.schedule;
+  console.log('s', schedule)
+  
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
   .select('*')
   .eq('userId', userId)
+  .containedBy('schedule', [0])
   .eq('activated', true)
-  
-  let todaysObjective = mainObjective.filter(el => {
-    let today = new Date();
-    let everyday = el.schedule.everyday;
-    let week = el.schedule.week;
-    let date = el.schedule.date;
+  console.log('err', error)
 
-    if(everyday === true) {
-      return true
-    } else if(week == true && week.includes(today.getDay())) {
-      return true
-    } else if(date == true && date.includes(today.getDate())) {
-      return true
-    } else {
-      return false
-    }
-  }) 
-  console.log(todaysObjective)
-  res.send('오늘의 목표');
+  console.log(mainObjective)
 });
 
-// 전체목표 가져오기
-router.get('/objective/all', async function(req, res, next) {
-  const userId = req.query.userId;
+// // 전체목표 가져오기
+// router.get('/objective/all', async function(req, res, next) {
+//   const userId = req.query.userId;
 
-  let { data: allObjective, error } = await supabase
-  .from('mainObjective')
-  .select('*')
-  .eq('userId', userId)
-  .eq('activated', true)
+//   let { data: allObjective, error } = await supabase
+//   .from('mainObjective')
+//   .select('*')
+//   .eq('userId', userId)
+//   .eq('activated', true)
 
-  console.log(allObjective)
-  res.send(allObjective)
-})
+//   console.log(allObjective)
+//   res.send(allObjective)
+// })
 
-// 종료된목표 가져오기
-router.get('/objective/end', async function(req, res, next) {
-  const userId = req.query.userId;
+// // 종료된목표 가져오기
+// router.get('/objective/end', async function(req, res, next) {
+//   const userId = req.query.userId;
 
-  let { data:endedObjective, error } = await supabase
-  .from('mainObjective')
-  .select('*')
-  .eq('userId', userId)
-  .eq('activated', false)
+//   let { data:endedObjective, error } = await supabase
+//   .from('mainObjective')
+//   .select('*')
+//   .eq('userId', userId)
+//   .eq('activated', false)
 
-  console.log(endedObjective)
-  res.send(endedObjective)
-})
+//   console.log(endedObjective)
+//   res.send(endedObjective)
+// })
 
 ////////////
 
