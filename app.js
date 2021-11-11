@@ -1,18 +1,12 @@
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
 const cookieParser = require('cookie-parser');
+var app = express();
 const apiRouter = require('./api/index.js');
 const session = require('express-session');
-var MySQLStore = require('express-mysql-session')(session);;
-var app = express();
-var options ={                                                 
-  host: 'localhost',
-  port: 3000,
-  userId: '',
-};
-var sessionStore = new MySQLStore(options);
+const FileStore = require('session-file-store')(session);
+
 
 // const __dirname = path.resolve();
 const join = path.join
@@ -21,21 +15,17 @@ const join = path.join
 app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.use(session({                                              
-  secret:"asdfasffdas",
+app.use(session({
+  secret:'keyboard cat',
   resave:false,
   saveUninitialized:true,
-  store: sessionStore,
-  cookie: {
-    httpOnly: true,
-    secure: false 
-  }                                         
-}));
+  store: new FileStore()
+}))
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(join(__dirname, 'public')));
-app.use(cors());
+app.use(cookieParser());
+
 
 app.use('/', apiRouter);
 

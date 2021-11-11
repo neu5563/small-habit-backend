@@ -3,22 +3,25 @@ var router = Router();
 const supabase = require('../supabase.js');
 const dotenv = require('dotenv');
 const { default: axios } = require('axios');
-dotenv.config()
+axios.defaults.withCredentials = true;
+dotenv.config();
 
 const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
 
 
 /* GET home page. */
-router.get('/',  function(req, res, next) {
-  res.render('index', { title: 'Express' });
+router.get('/loginCheck',  function(req, res, next) {
+  console.log('ses', req.cookies)
+  if(req.session.logined) {
+    res.redirect('http://localhost:8080/today')
+  }
 });
-
 
 // 카카오 로그인
 router.get('/login/kakao', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
-  console.log(AUTHORIZE_CODE)
-  console.log('session', req.session)
+  // console.log(req.session)
+
   // 토큰 받아오기
   let response;
   try {
@@ -50,7 +53,7 @@ router.get('/login/kakao', async function(req, res, next) {
     nickname: response.data.properties.nickname,
     email: response.data.kakao_account.email
   }
-  console.log('kakaoUser', kakaoUserAuth)
+  // console.log('kakaoUser', kakaoUserAuth)
 
   // 데이터 베이스에 유저가 있는지 탐색
   const getUser = async function() {
@@ -64,7 +67,8 @@ router.get('/login/kakao', async function(req, res, next) {
       console.log('err', err)
     }
   }
-  let userOfDatabase = await getUser(kakaoUserAuth);
+  let userOfDatabase = await getUser();
+  // console.log('kakaoUser', userOfDatabase.data)
 
   // 신규가입
   const newUser = async function() {
@@ -82,31 +86,36 @@ router.get('/login/kakao', async function(req, res, next) {
       console.log('err', err)
     }
   }
-  if(userOfDatabase.data.kakaoAuthId != kakaoUserAuth.kakaoAuthId) {
+  if(!userOfDatabase.data) {
     await newUser()
     userOfDatabase = await getUser();
   }
-  if (req.session.userId === undefined) {
-    req.session.userId = userOfDatabase.data.id;
+  if(userOfDatabase.data[0].kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
+    req.session.userId = userOfDatabase.data[0].id;
+    req.session.logined = true;
+    req.session.save()
+    console.log('ses', req.session)
+    res.send(req.session.userId)
   }
-  console.log('sessionUserId', req.session.userId)
-
 })
 
 ////////////////
 // 목표 가져오기
 router.get('/objectives',  async function(req, res, next) { 
 
-  const userId = req.query.userId;
-  const schedule = req.query.schedule;
-  console.log('s', schedule)
+  const match = {
+    userId: req.query.userId,
+    activated: req.query.activated
+  }
+  if(req.query.schedule?.schedule) {
+    match.schedule = schedule
+  }
+  console.log('match', match)
   
   let { data: mainObjective, error } = await supabase
   .from('mainObjective')
   .select('*')
-  .eq('userId', userId)
-  .containedBy('schedule', [0])
-  .eq('activated', true)
+  .match(match)
   console.log('err', error)
 
   console.log(mainObjective)
