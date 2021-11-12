@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 var app = express();
 const apiRouter = require('./api/index.js');
 const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+
 
 
 // const __dirname = path.resolve();
@@ -19,7 +19,6 @@ app.use(session({
   secret:'keyboard cat',
   resave:false,
   saveUninitialized:true,
-  store: new FileStore()
 }))
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

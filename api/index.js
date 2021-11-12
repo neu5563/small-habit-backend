@@ -9,18 +9,23 @@ dotenv.config();
 const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
 
 
-/* GET home page. */
-router.get('/loginCheck',  function(req, res, next) {
-  console.log('ses', req.cookies)
-  if(req.session.logined) {
-    res.redirect('http://localhost:8080/today')
+// 로그인 체크
+router.get('/auth',  async function(req, res, next) {
+  try {
+    const user = await supabase
+    .from('user')
+    .select('*')
+    .eq('id', req.session.userId)
+    res.send(user)
+  }catch(err) {
+    res.send(200)
   }
 });
 
 // 카카오 로그인
-router.get('/login/kakao', async function(req, res, next) {
+router.post('/auth/kakao', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
-  // console.log(req.session)
+  console.log(req.session)
 
   // 토큰 받아오기
   let response;
@@ -53,22 +58,21 @@ router.get('/login/kakao', async function(req, res, next) {
     nickname: response.data.properties.nickname,
     email: response.data.kakao_account.email
   }
-  // console.log('kakaoUser', kakaoUserAuth)
+  console.log('kakaoUser', kakaoUserAuth)
 
   // 데이터 베이스에 유저가 있는지 탐색
+  let user;
   const getUser = async function() {
     try {
-      const user = await supabase
+      response = await supabase
       .from('user')
       .select('*')
       .eq('kakaoAuthId', kakaoUserAuth.kakaoAuthId)
-      return user
+      return response.data[0]
     }catch(err) {
       console.log('err', err)
     }
   }
-  let userOfDatabase = await getUser();
-  // console.log('kakaoUser', userOfDatabase.data)
 
   // 신규가입
   const newUser = async function() {
@@ -86,18 +90,21 @@ router.get('/login/kakao', async function(req, res, next) {
       console.log('err', err)
     }
   }
-  if(!userOfDatabase.data) {
+  user = await getUser();
+  console.log('user', user)
+  if(!user) {
     await newUser()
-    userOfDatabase = await getUser();
+    user = await getUser();
   }
-  if(userOfDatabase.data[0].kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
-    req.session.userId = userOfDatabase.data[0].id;
-    req.session.logined = true;
-    req.session.save()
-    console.log('ses', req.session)
-    res.send(req.session.userId)
+  if(user.kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
+    req.session.userId = user.id;
+    console.log('session', req.session)
+    res.status(200).send({id: user.id})
   }
 })
+
+
+
 
 ////////////////
 // 목표 가져오기
@@ -105,54 +112,28 @@ router.get('/objectives',  async function(req, res, next) {
 
   const match = {
     userId: req.query.userId,
+    schedule: req.query.schedule,
     activated: req.query.activated
   }
-  if(req.query.schedule?.schedule) {
-    match.schedule = schedule
-  }
-  console.log('match', match)
-  
-  let { data: mainObjective, error } = await supabase
-  .from('mainObjective')
-  .select('*')
-  .match(match)
-  console.log('err', error)
 
-  console.log(mainObjective)
+  try {
+    let mainObjective  = await supabase
+    .from('mainObjective')
+    .select('*')
+    .eq('userId', req.query.userId)
+    .eq(`schedule->${req.query.schedule}`, req.query.schedule)
+    .eq('activated', req.query.activated)
+    console.log(mainObjective)
+  } catch(err) {
+    console.log('err', err)
+  }
 });
 
-// // 전체목표 가져오기
-// router.get('/objective/all', async function(req, res, next) {
-//   const userId = req.query.userId;
-
-//   let { data: allObjective, error } = await supabase
-//   .from('mainObjective')
-//   .select('*')
-//   .eq('userId', userId)
-//   .eq('activated', true)
-
-//   console.log(allObjective)
-//   res.send(allObjective)
-// })
-
-// // 종료된목표 가져오기
-// router.get('/objective/end', async function(req, res, next) {
-//   const userId = req.query.userId;
-
-//   let { data:endedObjective, error } = await supabase
-//   .from('mainObjective')
-//   .select('*')
-//   .eq('userId', userId)
-//   .eq('activated', false)
-
-//   console.log(endedObjective)
-//   res.send(endedObjective)
-// })
 
 ////////////
 
 // 신규목표 생성
-router.post('/objective/create', async function(req, res, next) {
+router.post('/objective', async function(req, res, next) {
   const newObjective = {
     userid: req.body.userId,
     field: req.body.field,
@@ -180,7 +161,7 @@ router.post('/objective/create', async function(req, res, next) {
 /////////////////
 
 // 목표 수정
-router.put('/objective/update', async function(req, res, next) {
+router.put('/objective', async function(req, res, next) {
   const updatedObjective = {
     userId: req.body.userId,
     id: req.body.id,
@@ -208,7 +189,7 @@ router.put('/objective/update', async function(req, res, next) {
 ///////////////
 
 // 목표 삭제
-router.delete('/objective/delete', async function(req, res, next) {
+router.delete('/objective', async function(req, res, next) {
   const deletedObjective = {
     userId: req.body.userId,
     id: req.body.id,
