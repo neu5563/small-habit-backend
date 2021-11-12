@@ -104,7 +104,8 @@ router.post('/auth/kakao', async function(req, res, next) {
   }
   if(kakaoUserAuth && user && user[0].kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
     req.session.userId = user[0].id;
-    res.send(user)
+    console.log('user', user)
+    res.json(user)
   }
 })
 
