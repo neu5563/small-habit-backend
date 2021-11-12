@@ -11,6 +11,7 @@ const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
 
 // 로그인 체크
 router.get('/auth',  async function(req, res, next) {
+  console.log('session', req.session)
   try {
     const user = await supabase
     .from('user')
@@ -18,7 +19,7 @@ router.get('/auth',  async function(req, res, next) {
     .eq('id', req.session.userId)
     res.send(user)
   }catch(err) {
-    res.send(200)
+    res.send(401)
   }
 });
 
@@ -29,51 +30,56 @@ router.post('/auth/kakao', async function(req, res, next) {
 
   // 토큰 받아오기
   let response;
-  try {
-    response = await axios({
-      method: 'get',
-      url: `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&code=${AUTHORIZE_CODE}`,
-    })
-  }catch(err) {
-    console.log(err)
+  let access_token;
+  if(AUTHORIZE_CODE) {
+    try {
+      response = await axios({
+        method: 'get',
+        url: `https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&code=${AUTHORIZE_CODE}`,
+      })
+      access_token = response.data.access_token;
+    }catch(err) {
+      console.log(err)
+    }
   }
-  let access_token = response.data.access_token;
-
   // 카카오에서 유저정보 받아오기
-  try {
-    response = await axios({
-      method: 'get',
-      headers: {
-        "Authorization": `Bearer ${access_token}`
-      },
-      url: 'https://kapi.kakao.com/v2/user/me'
-    })
-  }catch(err) {
-    console.log(err)
+  let kakaoUserAuth = {
+    kakaoAuthId: null,
+    nickname: null,
+    email: null
+  };
+  if(access_token) {
+    try {
+      response = await axios({
+        method: 'get',
+        headers: {
+          "Authorization": `Bearer ${access_token}`
+        },
+        url: 'https://kapi.kakao.com/v2/user/me'
+      })
+      kakaoUserAuth = {
+        kakaoAuthId: response.data.id,
+        nickname: response.data.properties.nickname,
+        email: response.data.kakao_account.email
+      }
+      console.log('kakaoUser', kakaoUserAuth.kakaoAuthId)
+    }catch(err) {
+      console.log(err)
+    }
   }
-
-  // 받아온 유저정보 저장
-  const kakaoUserAuth = {
-    kakaoAuthId: response.data.id,
-    nickname: response.data.properties.nickname,
-    email: response.data.kakao_account.email
-  }
-  console.log('kakaoUser', kakaoUserAuth)
 
   // 데이터 베이스에 유저가 있는지 탐색
-  let user;
   const getUser = async function() {
     try {
       response = await supabase
       .from('user')
       .select('*')
       .eq('kakaoAuthId', kakaoUserAuth.kakaoAuthId)
-      return response.data[0]
+      return response.data
     }catch(err) {
       console.log('err', err)
     }
   }
-
   // 신규가입
   const newUser = async function() {
     try {
@@ -90,16 +96,15 @@ router.post('/auth/kakao', async function(req, res, next) {
       console.log('err', err)
     }
   }
-  user = await getUser();
-  console.log('user', user)
-  if(!user) {
+  let user = await getUser();
+
+  if(kakaoUserAuth && !user) {
     await newUser()
     user = await getUser();
   }
-  if(user.kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
-    req.session.userId = user.id;
-    console.log('session', req.session)
-    res.status(200).send({id: user.id})
+  if(kakaoUserAuth && user && user[0].kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
+    req.session.userId = user[0].id;
+    res.send(user)
   }
 })
 
