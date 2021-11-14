@@ -3,6 +3,7 @@ var router = Router();
 const supabase = require('../supabase.js');
 const dotenv = require('dotenv');
 const { default: axios } = require('axios');
+const session = require('express-session');
 axios.defaults.withCredentials = true;
 dotenv.config();
 
@@ -11,23 +12,29 @@ const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
 
 // 로그인 체크
 router.get('/auth',  async function(req, res, next) {
-  console.log('session', req.session)
+  console.log('checkSession', req.session)
   try {
     const user = await supabase
     .from('user')
     .select('*')
     .eq('id', req.session.userId)
-    console.log('user', user)
+    // console.log('user', user)
     res.json(user)
   }catch(err) {
     res.send(401)
   }
 });
 
+// 카카오 로그아웃
+router.delete('/auth',  async function(req, res, next) { 
+  req.session.destroy();
+  console.log('logoutSession', req.session)
+});
+
 // 카카오 로그인
 router.post('/auth/kakao', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
-  console.log(req.session)
+  // console.log(req.session)
 
   // 토큰 받아오기
   let response;
@@ -63,7 +70,7 @@ router.post('/auth/kakao', async function(req, res, next) {
         nickname: response.data.properties.nickname,
         email: response.data.kakao_account.email
       }
-      console.log('kakaoUser', kakaoUserAuth.kakaoAuthId)
+      // console.log('kakaoUser', kakaoUserAuth.kakaoAuthId)
     }catch(err) {
       console.log(err)
     }
@@ -105,13 +112,11 @@ router.post('/auth/kakao', async function(req, res, next) {
   }
   if(kakaoUserAuth && user && user[0].kakaoAuthId == kakaoUserAuth.kakaoAuthId) {
     req.session.userId = user[0].id;
-    console.log('user', user)
+    console.log('loginSession', req.session)
+    // console.log('user', user)
     res.json(user)
   }
 })
-
-
-
 
 ////////////////
 // 습관 가져오기
@@ -132,8 +137,7 @@ router.get('/objectives',  async function(req, res, next) {
 
 
 ////////////
-
-// 신규목표 생성
+// 신규습관 생성
 router.post('/objective', async function(req, res, next) {
   try {
     console.log(newObjective)
@@ -153,8 +157,7 @@ router.post('/objective', async function(req, res, next) {
 })
 
 /////////////////
-
-// 목표 수정
+// 습관수정
 router.put('/objective', async function(req, res, next) { 
   try {
     console.log(updatedObjective)
@@ -171,9 +174,8 @@ router.put('/objective', async function(req, res, next) {
   }
 })
 
-///////////////
-
-// 목표 삭제
+//////////////////
+// 습관삭제
 router.delete('/objective', async function(req, res, next) {
   try {
     console.log(deletedObjective)
