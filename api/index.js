@@ -17,7 +17,8 @@ router.get('/auth',  async function(req, res, next) {
     .from('user')
     .select('*')
     .eq('id', req.session.userId)
-    res.send(user)
+    console.log('user', user)
+    res.json(user)
   }catch(err) {
     res.send(401)
   }
@@ -113,15 +114,8 @@ router.post('/auth/kakao', async function(req, res, next) {
 
 
 ////////////////
-// 목표 가져오기
+// 습관 가져오기
 router.get('/objectives',  async function(req, res, next) { 
-
-  const match = {
-    userId: req.query.userId,
-    schedule: req.query.schedule,
-    activated: req.query.activated
-  }
-
   try {
     let mainObjective  = await supabase
     .from('mainObjective')
@@ -130,6 +124,7 @@ router.get('/objectives',  async function(req, res, next) {
     .eq(`schedule->${req.query.schedule}`, req.query.schedule)
     .eq('activated', req.query.activated)
     console.log(mainObjective)
+    res.json(mainObjective)
   } catch(err) {
     console.log('err', err)
   }
@@ -140,23 +135,16 @@ router.get('/objectives',  async function(req, res, next) {
 
 // 신규목표 생성
 router.post('/objective', async function(req, res, next) {
-  const newObjective = {
-    userid: req.body.userId,
-    field: req.body.field,
-    objective: req.body.objective,
-    schedule: req.body.schedule,
-    activated: req.body.activated
-  };
   try {
     console.log(newObjective)
     await supabase
     .from('mainObjective')
     .insert([
-      { userId: newObjective.userid,
-        field: newObjective.field,
-        objective: newObjective.objective,
-        schedule: newObjective.schedule,
-        activated: newObjective.activated
+      { userId: req.body.userid,
+        kategorie: req.body.kategorie,
+        objective: req.body.objective,
+        schedule: req.body.schedule,
+        activated: req.body.activated
       },
     ])
   }catch(err) {
@@ -167,25 +155,16 @@ router.post('/objective', async function(req, res, next) {
 /////////////////
 
 // 목표 수정
-router.put('/objective', async function(req, res, next) {
-  const updatedObjective = {
-    userId: req.body.userId,
-    id: req.body.id,
-    field: req.body.field,
-    objective: req.body.objective,
-    schedule: req.body.schedule,
-    activated: req.body.activated,
-    edit: req.body.edit
-  };
+router.put('/objective', async function(req, res, next) { 
   try {
     console.log(updatedObjective)
     await supabase
     .from('mainObjective')
     .update(
-      updatedObjective.edit
+      req.body.edit
     )
-    .eq('userId', updatedObjective.userId)
-    .eq('id', updatedObjective.id)
+    .eq('userId', req.body.userId)
+    .eq('id', req.body.id)
     .eq('activated', true)
   }catch(err) {
     console.log('err', err)
@@ -196,22 +175,14 @@ router.put('/objective', async function(req, res, next) {
 
 // 목표 삭제
 router.delete('/objective', async function(req, res, next) {
-  const deletedObjective = {
-    userId: req.body.userId,
-    id: req.body.id,
-    field: req.body.field,
-    objective: req.body.objective,
-    schedule: req.body.schedule,
-    activated: req.body.activated
-  };
   try {
     console.log(deletedObjective)
     await supabase
     .from('mainObjective')
     .delete()
-    .eq('userId', deletedObjective.userId)
-    .eq('id', deletedObjective.id)
-    .eq('activated', deletedObjective.activated)
+    .eq('userId', req.body.userId)
+    .eq('id', req.body.id)
+    .eq('activated', req.body.activated)
   }catch(err) {
     console.log('err', err)
   }
