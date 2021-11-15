@@ -26,7 +26,7 @@ router.get('/auth',  async function(req, res, next) {
 });
 
 // 카카오 로그아웃
-router.delete('/auth',  async function(req, res, next) { 
+router.delete('/auth/logout',  async function(req, res, next) { 
   req.session.destroy();
   console.log('logoutSession', req.session)
 });
@@ -48,6 +48,7 @@ router.post('/auth/kakao', async function(req, res, next) {
       access_token = response.data.access_token;
     }catch(err) {
       console.log(err)
+      res.send(401)
     }
   }
   // 카카오에서 유저정보 받아오기
@@ -73,6 +74,7 @@ router.post('/auth/kakao', async function(req, res, next) {
       // console.log('kakaoUser', kakaoUserAuth.kakaoAuthId)
     }catch(err) {
       console.log(err)
+      res.send(401)
     }
   }
 
@@ -86,6 +88,7 @@ router.post('/auth/kakao', async function(req, res, next) {
       return response.data
     }catch(err) {
       console.log('err', err)
+      res.send(401)
     }
   }
   // 신규가입
@@ -114,7 +117,9 @@ router.post('/auth/kakao', async function(req, res, next) {
     req.session.userId = user[0].id;
     console.log('loginSession', req.session)
     // console.log('user', user)
-    res.json(user)
+    req.session.save(() => {
+      res.json(user)
+    })
   }
 })
 
