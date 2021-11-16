@@ -11,7 +11,7 @@ const { REST_API_KEY, REDIRECT_URI, SUPABASE_URL, SUPABASE_KEY } = process.env;
 
 
 // 로그인 체크
-router.get('/api/auth',  async function(req, res, next) {
+router.get('/auth',  async function(req, res, next) {
   console.log('checkSession', req.session)
   try {
     const user = await supabase
@@ -26,14 +26,14 @@ router.get('/api/auth',  async function(req, res, next) {
 });
 
 // 카카오 로그아웃
-router.delete('/api/auth/logout',  async function(req, res, next) { 
+router.delete('/auth/logout',  async function(req, res, next) { 
   req.session.destroy();
   res.send(200);
   console.log('logoutSession', req.session)
 });
 
 // 카카오 로그인
-router.post('/api/auth/login', async function(req, res, next) {
+router.post('/auth/login', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
   // console.log(req.session)
 
@@ -124,7 +124,7 @@ router.post('/api/auth/login', async function(req, res, next) {
 
 ////////////////
 // 습관 가져오기
-router.get('/api/objectives',  async function(req, res, next) { 
+router.get('/objectives',  async function(req, res, next) { 
   try {
     let mainObjective  = await supabase
     .from('mainObjective')
@@ -142,7 +142,7 @@ router.get('/api/objectives',  async function(req, res, next) {
 
 ////////////
 // 신규습관 생성
-router.post('/api/objective', async function(req, res, next) {
+router.post('/objective', async function(req, res, next) {
   try {
     console.log(newObjective)
     await supabase
@@ -162,7 +162,7 @@ router.post('/api/objective', async function(req, res, next) {
 
 /////////////////
 // 습관수정
-router.put('/api/objective', async function(req, res, next) { 
+router.put('/objective', async function(req, res, next) { 
   try {
     console.log(updatedObjective)
     await supabase
@@ -180,7 +180,7 @@ router.put('/api/objective', async function(req, res, next) {
 
 //////////////////
 // 습관삭제
-router.delete('/api/objective', async function(req, res, next) {
+router.delete('/objective', async function(req, res, next) {
   try {
     console.log(deletedObjective)
     await supabase
