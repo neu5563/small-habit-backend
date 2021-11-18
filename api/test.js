@@ -2,7 +2,7 @@ const axios = require('axios');
 
 let createdObjective = {
   userId: 1,
-  categorie: '돈관리',
+  category: '돈관리',
   objective: '매일 커피 1잔 덜마시기',
   schedule: {
     everyday: true
@@ -16,7 +16,7 @@ const createObjective = function(req) {
       url: 'http://localhost:3000/objective/create',
       data: { 
         userId: req.userId,
-        categorie: req.categorie,
+        category: req.category,
         objective: req.objective,
         schedule: req.schedule,
         activated: req.activated
@@ -35,7 +35,7 @@ const createObjective = function(req) {
 let updatedObjective = {
   userId: 1,
   id: 5,
-  categorie: '돈관리',
+  category: '돈관리',
   objective: '하루에 10000원식 저금하기',
   schedule: {
     everyday: true
@@ -53,7 +53,7 @@ const updateObjective = function(req) {
       data: { 
         userId: req.userId,
         id: req.id,
-        categorie: req.categorie,
+        category: req.category,
         objective: req.objective,
         schedule: req.schedule,
         activated: req.activated,
@@ -73,7 +73,7 @@ const updateObjective = function(req) {
 let deletedObjective = {
   userId: 1,
   id: 7,
-  categorie: '돈관리',
+  category: '돈관리',
   objective: '매일 100원 저금하기',
   schedule: {
     everyday: true
@@ -88,7 +88,7 @@ const deleteObjective = function (req) {
       data: { 
         userId: req.userId,
         id: req.id,
-        categorie: req.categorie,
+        category: req.category,
         objective: req.objective,
         schedule: req.schedule,
         activated: req.activated

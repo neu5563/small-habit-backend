@@ -26,14 +26,14 @@ router.get('/auth',  async function(req, res, next) {
 });
 
 // 카카오 로그아웃
-router.delete('/auth/logout',  async function(req, res, next) { 
+router.delete('/auth',  async function(req, res, next) { 
   req.session.destroy();
   res.send(200);
   console.log('logoutSession', req.session)
 });
 
 // 카카오 로그인
-router.post('/auth/login', async function(req, res, next) {
+router.post('/auth', async function(req, res, next) {
   const AUTHORIZE_CODE = req.query.code;
   // console.log(req.session)
 
