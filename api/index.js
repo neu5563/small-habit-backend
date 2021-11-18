@@ -132,8 +132,7 @@ router.get('/objectives',  async function(req, res, next) {
     .eq('userId', req.query.userId)
     .eq(`schedule->${req.query.schedule}`, req.query.schedule)
     .eq('activated', req.query.activated)
-    console.log(mainObjective)
-    res.json(mainObjective)
+    res.send(mainObjective.data)
   } catch(err) {
     console.log('err', err)
   }
