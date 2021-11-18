@@ -94,8 +94,6 @@ router.post('/auth', async function(req, res, next) {
     kakaoUser = await getKakaoUserInfo(accessToken)
   }
 
-  console.log(kakaoUser)
-
   if(!kakaoUser) {
     res.sendStatus(401)
     return
@@ -112,7 +110,6 @@ router.post('/auth', async function(req, res, next) {
     console.log('loginSession', req.session)
     res.sendStatus(200)
   } else {
-    console.log('kakaoUser', kakaoUser)
     let { data: newUser, error } = await supabase
       .from('user')
       .insert([kakaoUser])
@@ -130,72 +127,116 @@ router.post('/auth', async function(req, res, next) {
 ////////////////
 // 습관 가져오기
 router.get('/objectives',  async function(req, res, next) { 
-  try {
-    let mainObjective  = await supabase
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { data, error } = await supabase
     .from('mainObjective')
     .select('*')
-    .eq('userId', req.query.userId)
-    .eq(`schedule->${req.query.schedule}`, req.query.schedule)
+    .eq('userId', req.session.userId)
     .eq('activated', req.query.activated)
-    res.send(mainObjective.data)
-  } catch(err) {
-    console.log('err', err)
+    .containedBy(`schedule`, req.query.schedule.split(',').map(e => +e)) // 일부 포함하면 됨
+  // .contains(`schedule`, [0,1,2,3,4,5,6]) // 모두 포함해야 됨
+
+  if(error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.send(data)
   }
 });
 
 
 ////////////
 // 신규습관 생성
-router.post('/objective', async function(req, res, next) {
-  try {
-    console.log(newObjective)
-    await supabase
+router.post('/objectives', async function(req, res, next) {
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { error } = await supabase
     .from('mainObjective')
-    .insert([
-      { userId: req.body.userid,
-        kategorie: req.body.kategorie,
-        objective: req.body.objective,
-        schedule: req.body.schedule,
-        activated: req.body.activated
-      },
-    ])
-  }catch(err) {
-    console.log('err', err)
+    .insert({ 
+      userId: req.session.userId,
+      ...req.body
+    })
+
+  if(error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.sendStatus(200)
   }
 })
 
 /////////////////
 // 습관수정
-router.put('/objective', async function(req, res, next) { 
-  try {
-    console.log(updatedObjective)
-    await supabase
+router.put('/objectives/:id', async function(req, res, next) { 
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  
+  let { error } = await supabase
     .from('mainObjective')
-    .update(
-      req.body.edit
-    )
-    .eq('userId', req.body.userId)
-    .eq('id', req.body.id)
+    .update(req.body)
+    .eq('userId', req.session.userId)
+    .eq('id', req.params.id)
     .eq('activated', true)
-  }catch(err) {
-    console.log('err', err)
+
+  if(error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.sendStatus(200)
   }
 })
 
 //////////////////
 // 습관삭제
-router.delete('/objective', async function(req, res, next) {
-  try {
-    console.log(deletedObjective)
-    await supabase
+router.delete('/objectives/:id', async function(req, res, next) {
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  
+  let { error } = await supabase
     .from('mainObjective')
     .delete()
-    .eq('userId', req.body.userId)
-    .eq('id', req.body.id)
-    .eq('activated', req.body.activated)
-  }catch(err) {
-    console.log('err', err)
+    .eq('userId', req.session.userId)
+    .eq('id', req.params.id)
+
+  if(error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.sendStatus(200)
   }
 })
+
+// router.delete('/objectives', async function(req, res, next) {
+//   if(!req.session.userId) {
+//     res.sendStatus(401)
+//     return
+//   }
+
+//   // DELETE /objectives?id=1
+  
+//   let { error } = await supabase
+//     .from('mainObjective')
+//     .delete()
+//     .eq('userId', req.session.userId)
+//     .in('id', req.query.ids.split(',').map(e => +e))
+
+//   if(error) {
+//     console.log(error)
+//     res.status(500).send(error)
+//   } else {
+//     res.sendStatus(200)
+//   }
+// })
 
 module.exports = router;
