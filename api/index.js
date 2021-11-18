@@ -118,7 +118,7 @@ router.post('/auth', async function(req, res, next) {
     req.session.userId = user[0].id;
     console.log('loginSession', req.session)
     // console.log('user', user)
-    res.json(user)
+    res.send(user)
   }
 })
 
