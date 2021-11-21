@@ -19,7 +19,6 @@ router.get('/auth',  async function(req, res, next) {
       .select('*')
       .eq('id', req.session.userId)
       .single()
-
     if(user) {
       res.send(user)
     } else {
@@ -77,7 +76,7 @@ router.post('/auth', async function(req, res, next) {
             nickname: data.properties.nickname,
             email: data.kakao_account.email
           })
-          // console.log('kakaoUser', kakaoUserAuth.kakaoAuthId)
+          // console.log('kakaoUser', kakaoAuthId)
         } catch(err) {
           console.log('getKakaoUserInfo', err)
           reject(err)
@@ -131,15 +130,15 @@ router.get('/objectives',  async function(req, res, next) {
     res.sendStatus(401)
     return
   }
-
+  console.log(req.query.schedule.split(',').map(e => +e))
   let { data, error } = await supabase
     .from('mainObjective')
     .select('*')
     .eq('userId', req.session.userId)
     .eq('activated', req.query.activated)
-    .containedBy(`schedule`, req.query.schedule.split(',').map(e => +e)) // 일부 포함하면 됨
+    .overlaps(`schedule`, req.query.schedule.split(',').map(e => +e)) // 일부 포함하면 됨
   // .contains(`schedule`, [0,1,2,3,4,5,6]) // 모두 포함해야 됨
-
+  console.log(data)
   if(error) {
     console.log(error)
     res.status(500).send(error)
