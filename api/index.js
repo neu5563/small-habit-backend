@@ -277,7 +277,7 @@ router.delete('/withdrawal', async function(req, res, next) {
       console.log(error)
       res.status(500).send(error)
     } else {
-      res.sendStatus(200)
+      deleteUserAuth()
     }
   }
   deleteAllObjective()
@@ -292,10 +292,10 @@ router.delete('/withdrawal', async function(req, res, next) {
       console.log(error)
       res.status(500).send(error)
     } else {
+      req.session.destroy();
       res.sendStatus(200)
     }
   }
-  deleteUserAuth()
 
 })
 
