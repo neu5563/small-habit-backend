@@ -124,7 +124,7 @@ router.post('/auth', async function(req, res, next) {
 })
 
 ////////////////
-// 습관 가져오기
+// 습관들 가져오기
 router.get('/objectives',  async function(req, res, next) { 
   if(!req.session.userId) {
     res.sendStatus(401)
@@ -147,6 +147,27 @@ router.get('/objectives',  async function(req, res, next) {
   }
 });
 
+// 습관 단일 가져오기
+router.get('/objectives/:id',  async function(req, res, next) { 
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  console.log(req.query.schedule.split(',').map(e => +e))
+  let { data, error } = await supabase
+    .from('mainObjective')
+    .select('*')
+    .eq('userId', req.session.userId)
+    .eq('id', req.params.id)
+    .single()
+  console.log(data)
+  if(error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.send(data)
+  }
+});
 
 ////////////
 // 신규습관 생성
