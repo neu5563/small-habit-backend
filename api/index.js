@@ -116,7 +116,8 @@ router.post('/auth', async function(req, res, next) {
     if(error) {
       res.status(500).send(error)
     } else {
-      req.session.userId = newUser.id;
+      console.log(newUser)
+      req.session.userId = newUser[0].id;
       console.log('loginSession', req.session)
       res.sendStatus(200)
     }
@@ -258,5 +259,44 @@ router.delete('/objectives/:id', async function(req, res, next) {
 //     res.sendStatus(200)
 //   }
 // })
+
+
+// 탈퇴하기
+router.delete('/withdrawal', async function(req, res, next) {
+  if(!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  async function deleteAllObjective() {
+    let { error } = await supabase
+    .from('mainObjective')
+    .delete()
+    .eq('userId', req.session.userId)
+  
+    if(error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      res.sendStatus(200)
+    }
+  }
+  deleteAllObjective()
+
+  async function deleteUserAuth() {
+    let { error } = await supabase
+    .from('user')
+    .delete()
+    .eq('id', req.session.userId)
+
+    if(error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      res.sendStatus(200)
+    }
+  }
+  deleteUserAuth()
+
+})
 
 module.exports = router;
