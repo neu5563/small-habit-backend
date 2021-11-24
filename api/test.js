@@ -9,12 +9,12 @@ let createdObjective = {
   },
   activated: true
 }
-const createObjective = function(req) {
+const createObjective = function (req) {
   try {
     axios({
       method: 'post',
       url: 'http://localhost:3000/objective/create',
-      data: { 
+      data: {
         userId: req.userId,
         category: req.category,
         objective: req.objective,
@@ -24,7 +24,7 @@ const createObjective = function(req) {
       headers: {
         "Content-Type": `application/json`,
       },
-    });    
+    });
   }
   catch (err) {
     console.log(err);
@@ -45,12 +45,12 @@ let updatedObjective = {
     objective: '하루에 20000원식 저금하기'
   }
 }
-const updateObjective = function(req) {
+const updateObjective = function (req) {
   try {
     axios({
       method: 'put',
       url: 'http://localhost:3000/objective/update',
-      data: { 
+      data: {
         userId: req.userId,
         id: req.id,
         category: req.category,
@@ -62,7 +62,7 @@ const updateObjective = function(req) {
       headers: {
         "Content-Type": `application/json`,
       },
-    });    
+    });
   }
   catch (err) {
     console.log(err);
@@ -85,7 +85,7 @@ const deleteObjective = function (req) {
     axios({
       method: 'delete',
       url: 'http://localhost:3000/objective/delete',
-      data: { 
+      data: {
         userId: req.userId,
         id: req.id,
         category: req.category,
@@ -96,7 +96,7 @@ const deleteObjective = function (req) {
       headers: {
         "Content-Type": `application/json`,
       },
-    });    
+    });
   }
   catch (err) {
     console.log(err);
@@ -109,14 +109,14 @@ const user = {
   activated: true
 }
 
-const objectives = async function(req) {
+const objectives = async function (req) {
   try {
-      await axios({
+    await axios({
       method: 'get',
       url: 'http://localhost:3000/objectives',
       params: req
-    }); 
- 
+    });
+
   }
   catch (err) {
     console.log('reqErr', err);
