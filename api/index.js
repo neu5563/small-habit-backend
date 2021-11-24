@@ -293,7 +293,7 @@ router.post('/practiced/:id', async function(req, res, next) {
     .insert({ 
       userId: req.session.userId,
       objectiveId: req.params.id,
-      date: req.query.date
+      date: req.body.date
     },)
 
   if(error) {
