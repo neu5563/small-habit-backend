@@ -116,7 +116,8 @@ router.post('/auth', async function (req, res, next) {
     if (error) {
       res.status(500).send(error)
     } else {
-      req.session.userId = newUser.id;
+      console.log(newUser)
+      req.session.userId = newUser[0].id;
       console.log('loginSession', req.session)
       res.sendStatus(200)
     }
@@ -124,13 +125,13 @@ router.post('/auth', async function (req, res, next) {
 })
 
 ////////////////
-// 습관 가져오기
+// 습관들 가져오기
 router.get('/objectives', async function (req, res, next) {
   if (!req.session.userId) {
     res.sendStatus(401)
     return
   }
-  console.log(req.query.schedule.split(',').map(e => +e))
+  // console.log(req.query.schedule.split(',').map(e => +e))
   let { data, error } = await supabase
     .from('mainObjective')
     .select('*')
@@ -147,6 +148,27 @@ router.get('/objectives', async function (req, res, next) {
   }
 });
 
+// 습관 단일 가져오기
+router.get('/objectives/:id', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  console.log(req.query.schedule.split(',').map(e => +e))
+  let { data, error } = await supabase
+    .from('mainObjective')
+    .select('*')
+    .eq('userId', req.session.userId)
+    .eq('id', req.params.id)
+    .single()
+  // console.log(data)
+  if (error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.send(data)
+  }
+});
 
 ////////////
 // 신규습관 생성
@@ -237,5 +259,157 @@ router.delete('/objectives/:id', async function (req, res, next) {
 //     res.sendStatus(200)
 //   }
 // })
+
+// 실천여부 확인
+router.get('/practiced/:id', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { data } = await supabase
+    .from('practiced')
+    .select('*')
+    .eq('objectiveId', req.params.id)
+    .eq('date', req.query.date)
+    .single()
+
+  if (data) {
+    res.send(true)
+  } else {
+    res.send(false)
+  }
+})
+
+// 습관 실천하기
+router.post('/practiced/:id', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { error } = await supabase
+    .from('practiced')
+    .insert({
+      userId: req.session.userId,
+      objectiveId: req.params.id,
+      date: req.body.date
+    })
+
+  if (error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.sendStatus(200)
+  }
+})
+
+// 습관 실천 취소하기
+router.delete('/practiced/:id', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { error } = await supabase
+    .from('practiced')
+    .delete()
+    .eq('objectiveId', req.params.id)
+    .eq('date', req.query.date)
+
+
+  if (error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.sendStatus(200)
+  }
+})
+
+// 습관 실천횟수 가져오기
+router.get('/totalpracticed/:id', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+
+  let { data, error } = await supabase
+    .from('practiced')
+    .select('*')
+    .eq('objectiveId', req.params.id)
+
+  if (error) {
+    console.log(error)
+    res.status(500).send(error)
+  } else {
+    res.send(data)
+  }
+})
+
+// 탈퇴하기
+router.delete('/withdrawal', async function (req, res, next) {
+  if (!req.session.userId) {
+    res.sendStatus(401)
+    return
+  }
+  async function deletePractived() {
+    let { error } = await supabase
+      .from('mainObjective')
+      .delete()
+      .eq('userId', req.session.userId)
+
+    if (error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      deleteDetailedObjective()
+    }
+  }
+
+  async function deleteDetailedObjective() {
+    let { error } = await supabase
+      .from('detailedObjective')
+      .delete()
+      .eq('userId', req.session.userId)
+
+    if (error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      deleteMainObjective()
+    }
+  }
+
+  async function deleteMainObjective() {
+    let { error } = await supabase
+      .from('mainObjective')
+      .delete()
+      .eq('userId', req.session.userId)
+
+    if (error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      deleteUserAuth()
+    }
+  }
+
+  async function deleteUserAuth() {
+    let { error } = await supabase
+      .from('user')
+      .delete()
+      .eq('id', req.session.userId)
+
+    if (error) {
+      console.log(error)
+      res.status(500).send(error)
+    } else {
+      req.session.destroy();
+      res.sendStatus(200)
+    }
+  }
+
+  deletePractived()
+})
 
 module.exports = router;
